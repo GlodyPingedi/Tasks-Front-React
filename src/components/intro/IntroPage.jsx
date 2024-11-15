@@ -1,21 +1,20 @@
 'use client'
 import { useState, useEffect } from 'react'
-import {
-  Button,
-  Label,
-  Textarea,
-  Modal,
-  Select,
-  Dropdown
-} from 'flowbite-react'
-import Mois from './liste/mois'
-import Jour from './liste/Jour'
-import Annee from './liste/Annee'
+import { Button, Dropdown } from 'flowbite-react'
+import { Delete } from '../modals/Delete'
+import { IntroCreate } from '../modals/Intro/IntroCreate'
 const apiUrl = import.meta.env.VITE_API_URL
 
 export default function IntroPage () {
-  const [openModal, setOpenModal] = useState(false)
   const [taches, setTaches] = useState([])
+
+  const [openIntroCreate, setOpenIntroCreate] = useState(false)
+
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [selectedTaskId, setSelectedTaskId] = useState(null)
+
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     fetchTaches()
@@ -41,34 +40,9 @@ export default function IntroPage () {
     }
   }
 
-  const currentMonth = new Date().getMonth() + 1
-  const currentYear = new Date().getFullYear()
-  const currentDay = new Date().getDate()
-  const [formData, setFormData] = useState({
-    libelle: '',
-    mois: currentMonth,
-    jour: currentDay,
-    annee: currentYear,
-    heure: ''
-  })
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-
-  function onCloseModal () {
-    setOpenModal(false)
-    setFormData({
-      libelle: '',
-      mois: currentMonth,
-      jour: currentDay,
-      annee: currentYear,
-      heure: ''
-    })
-  }
-
   useEffect(() => {
     if (isSuccess) {
-      setOpenModal(false)
+      setOpenIntroCreate(false)
       fetchTaches()
     }
   }, [isSuccess])
@@ -82,154 +56,36 @@ export default function IntroPage () {
     }
   }, [isSuccess])
 
-  async function onSubmitForm (e) {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    try {
-      const response = await fetch(`${apiUrl}/taches`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
-
-      if (response.ok) {
-        setIsSuccess(true)
-        console.log('Tâche ajoutée avec succès', response.json())
-      }
-    } catch (error) {
-      console.log(error)
-    }
+  const deleteInit = () => {
+    fetchTaches()
+    setOpenDeleteModal(false)
+    setIsSuccess(true)
+    setMessage('Tâche supprimée avec succès !')
   }
 
-  function handleChange (e) {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+  const introInit = () => {
+    fetchTaches()
+    setOpenIntroCreate(false)
+    setIsSuccess(true)
+    setMessage('Tâche ajoutée avec succès !')
   }
 
   return (
     <div className='pt-36 mx-6'>
-      <Modal show={openModal} size='md' onClose={onCloseModal} popup>
-        <Modal.Header className='m-4'>
-          <h3 className='text-xl font-medium text-gray-900 dark:text-white'>
-            Ajouter une tâche
-          </h3>
-        </Modal.Header>
-        <Modal.Body>
-          <form onSubmit={onSubmitForm}>
-            <div className='space-y-6'>
-              <div className='max-w-md'>
-                <div className='mb-2 block'>
-                  <Label
-                    htmlFor='libelle'
-                    value='Tâche à faire'
-                    className='text-xl'
-                  />
-                </div>
-                <Textarea
-                  name='libelle'
-                  onChange={handleChange}
-                  id='libelle'
-                  placeholder='Tâche à faire...'
-                  required
-                  rows={4}
-                />
-              </div>
-              <div className='w-full flex justify-between gap-4'>
-                <div className='w-full'>
-                  <label
-                    htmlFor='date'
-                    className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'
-                  >
-                    Date
-                  </label>
-                  <div id='date' className='flex inline-block gap-2'>
-                    <Select
-                      id='jour'
-                      name='jour'
-                      onChange={handleChange}
-                      required
-                    >
-                      <Jour mois={formData.mois} />
-                    </Select>
-
-                    <Select
-                      id='mois'
-                      name='mois'
-                      onChange={handleChange}
-                      required
-                    >
-                      <Mois />
-                    </Select>
-
-                    <Select
-                      id='annee'
-                      name='annee'
-                      onChange={handleChange}
-                      required
-                    >
-                      <Annee />
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              <div className='w-24'>
-                <label
-                  htmlFor='time'
-                  className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'
-                >
-                  Heure
-                </label>
-                <div className='relative'>
-                  <div className='absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none'>
-                    <svg
-                      className='w-4 h-4 text-gray-500 dark:text-gray-400'
-                      aria-hidden='true'
-                      xmlns='http://www.w3.org/2000/svg'
-                      fill='currentColor'
-                      viewBox='0 0 24 24'
-                    >
-                      <path
-                        fillRule='evenodd'
-                        d='M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z'
-                        clipRule='evenodd'
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    type='time'
-                    id='time'
-                    name='heure'
-                    value={formData.heure}
-                    onChange={handleChange}
-                    className='bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
-                    min='09:00'
-                    max='18:00'
-                    required
-                  />
-                </div>
-              </div>
-              <div className='w-full'>
-                <Button type='submit'>
-                  {isSubmitting ? 'En cours...' : 'Ajouter'}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </Modal.Body>
-      </Modal>
       {isSuccess && (
         <div
           className='p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400'
           role='alert'
         >
-          Tâche ajoutée avec succès !
+          {message}
         </div>
       )}
+
       <div className='flex justify-between mb-4'>
         <h1 className='text-2xl font-bold text-white'>Tâches</h1>
-        <Button onClick={() => setOpenModal(true)}>Ajouter une tâche</Button>
+        <Button onClick={() => setOpenIntroCreate(true)}>
+          Ajouter une tâche
+        </Button>
       </div>
       {taches.length == 0 && <p className='text-white'>Aucune tâche trouvée</p>}
       <div className='relative overflow-x-auto shadow-md sm:rounded-lg'>
@@ -302,7 +158,12 @@ export default function IntroPage () {
                           <path d='M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z' />
                         </svg>
                       </Dropdown.Item>
-                      <Dropdown.Item>
+                      <Dropdown.Item
+                        onClick={() => {
+                          setSelectedTaskId(tache.id)
+                          setOpenDeleteModal(true)
+                        }}
+                      >
                         <svg
                           xmlns='http://www.w3.org/2000/svg'
                           viewBox='0 0 20 20'
@@ -324,6 +185,12 @@ export default function IntroPage () {
           </table>
         )}
       </div>
+      <Delete
+        setOpenModal={openDeleteModal}
+        selectedTaskId={selectedTaskId}
+        deleteInit={deleteInit}
+      />
+      <IntroCreate setOpenModal={openIntroCreate} introInit={introInit} />
     </div>
   )
 }
